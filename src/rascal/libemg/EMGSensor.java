@@ -7,7 +7,9 @@ import java.util.List;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Line;
 import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.Mixer;
 import javax.sound.sampled.TargetDataLine;
 
 
@@ -74,6 +76,28 @@ public class EMGSensor extends Thread {
     }
     
     private void init() throws LineUnavailableException {
+//    	 microphone = AudioSystem.getTargetDataLine(format);
+//    	 System.out.println("!!!!!!!!!!!!!!!" +microphone.getLineInfo()+" !!!!!!!!!!!!!!!");
+//    	
+//    	 Mixer.Info[] mixerInfos = AudioSystem.getMixerInfo();
+//    	 for (Mixer.Info info: mixerInfos){
+//    	  Mixer m = AudioSystem.getMixer(info);
+//    	  Line.Info[] lineInfos = m.getSourceLineInfo();
+//    	  for (Line.Info lineInfo:lineInfos){
+//    	   System.out.println (info.getName()+"---"+lineInfo);
+//    	   Line line = m.getLine(lineInfo);
+//    	   System.out.println("\t-----"+line);
+//    	  }
+//    	  lineInfos = m.getTargetLineInfo();
+//    	  for (Line.Info lineInfo:lineInfos){
+//    	   System.out.println (m+"---"+lineInfo);
+//    	   Line line = m.getLine(lineInfo);
+//    	   System.out.println("\t-----"+line);
+//
+//    	  }
+//
+//    	 }
+//    	 System.exit(0);
         bufferLength = SAMPLE_RATE / updateRate;
         byteSensorData=new byte[bufferLength*2];
         sensorData =  new short[bufferLength];

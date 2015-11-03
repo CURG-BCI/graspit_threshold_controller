@@ -75,22 +75,22 @@ public class ThresholdController {
     private void move(float val) {
         switch (mode) {
         case LOW:
-        	System.out.println("Low: Rotate -" +rotationIncrement);
+        	System.out.println("Low: " + InputState.LOW.ordinal());
             // rotate counter-clockwise
             rotate(rotationIncrement);
             break;
         case TRANSITIONING:
-        	System.out.println("Transition");
+        	System.out.println("Transition " + InputState.TRANSITIONING.ordinal());
             // do nothing
             break;
         case MED:
-        	System.out.println("Medium: Forward Slow -"+forwardSlow );
+        	System.out.println("Medium: "+InputState.MED.ordinal());
             // move forward at constant speed
             forward(0);
             break;
         case HIGH:
             // go forward
-        	System.out.println("High: Forward Fast -"+forwardSlow + forwardIncrement*(val*val) );
+        	System.out.println("High: "+ InputState.HIGH.ordinal() );
             forward((val-highThreshold)/(1-highThreshold));
             break;
         }
