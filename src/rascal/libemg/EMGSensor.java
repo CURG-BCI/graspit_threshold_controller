@@ -7,9 +7,7 @@ import java.util.List;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Line;
 import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.Mixer;
 import javax.sound.sampled.TargetDataLine;
 
 
@@ -30,9 +28,7 @@ public class EMGSensor extends Thread {
      * Audio recording configuration.
      */
    private static final int SAMPLE_RATE    = 8000;
-//    private static final int CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO;
-//    private static final int AUDIO_FORMAT   = AudioFormat.ENCODING_PCM_16BIT;
-    private static final int BUFFER_SIZE = 100000;
+   private static final int BUFFER_SIZE = 100000;
     
     private int updateRate;
     private int bufferLength;
@@ -76,28 +72,7 @@ public class EMGSensor extends Thread {
     }
     
     private void init() throws LineUnavailableException {
-//    	 microphone = AudioSystem.getTargetDataLine(format);
-//    	 System.out.println("!!!!!!!!!!!!!!!" +microphone.getLineInfo()+" !!!!!!!!!!!!!!!");
-//    	
-//    	 Mixer.Info[] mixerInfos = AudioSystem.getMixerInfo();
-//    	 for (Mixer.Info info: mixerInfos){
-//    	  Mixer m = AudioSystem.getMixer(info);
-//    	  Line.Info[] lineInfos = m.getSourceLineInfo();
-//    	  for (Line.Info lineInfo:lineInfos){
-//    	   System.out.println (info.getName()+"---"+lineInfo);
-//    	   Line line = m.getLine(lineInfo);
-//    	   System.out.println("\t-----"+line);
-//    	  }
-//    	  lineInfos = m.getTargetLineInfo();
-//    	  for (Line.Info lineInfo:lineInfos){
-//    	   System.out.println (m+"---"+lineInfo);
-//    	   Line line = m.getLine(lineInfo);
-//    	   System.out.println("\t-----"+line);
-//
-//    	  }
-//
-//    	 }
-//    	 System.exit(0);
+
         bufferLength = SAMPLE_RATE / updateRate;
         byteSensorData=new byte[bufferLength*2];
         sensorData =  new short[bufferLength];
@@ -105,8 +80,6 @@ public class EMGSensor extends Thread {
         microphone.open();
         System.out.println("Microphone Init");
        
-        //recorder = new AudioRecord(AudioSource.MIC, SAMPLE_RATE, 
-            //                       CHANNEL_CONFIG, AUDIO_FORMAT, BUFFER_SIZE);
     }
     
     /**
@@ -118,9 +91,6 @@ public class EMGSensor extends Thread {
     @Override
     public void run() {
         doneRunning = false;
-        
-        //while (microphone.isOpen() //recorder.getState() == AudioRecord.STATE_UNINITIALIZED) 
-        //{}
         
         microphone.start();
         
@@ -215,7 +185,6 @@ public class EMGSensor extends Thread {
         stopped = false;
         interrupt();
         while(!doneRunning) {}
-        //if (recorder.getState() != AudioRecord.STATE_UNINITIALIZED) 
         {
             microphone.stop();
         }

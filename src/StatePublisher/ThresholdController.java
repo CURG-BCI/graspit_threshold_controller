@@ -1,5 +1,10 @@
 package StatePublisher;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.Random;
 
 import rascal.libemg.proc.Util;
@@ -20,6 +25,7 @@ public class ThresholdController {
     public static final float FORWARD_INCREMENT_SLOW_DEFAULT = 0.05f;
     public static final float ROTATION_INCREMENT_DEFAULT = (float)Math.PI/16;
     public static final float ATANH07 = 0.867300577f;
+    private boolean connected=false;
     
     private float x;
     private float y;
@@ -36,6 +42,10 @@ public class ThresholdController {
     private long timestamp;
     private long transitionTimestamp;
     private float prevVal;
+    private Socket socket;
+    private OutputStream os;
+    private DataOutputStream ds;
+    
     
     public ThresholdController(float lowThreshold, float highThreshold,
             float forwardIncrement, float rotationIncrement, float forwardSlow) {
@@ -46,24 +56,50 @@ public class ThresholdController {
         
         reset();
     }
-    
-    public void update(float val) {
+    public boolean initSocketConnections() //throws UnknownHostException, IOException
+    {try {
+		socket=new Socket("localhost",4765);
+	} catch (UnknownHostException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+		return false;
+	} catch (IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+		return false;
+	}
+	 try {
+		os=socket.getOutputStream();
+	} catch (IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+		return false;
+	}
+	 ds=new DataOutputStream(os);
+	System.out.println("Socket connected");
+	connected=true;
+	return true;
+	}
+    public void update(float val) throws UnknownHostException, IOException {
         timestamp = System.nanoTime();
         
         if (val < lowThreshold) {
             mode = InputState.LOW;
         }
         else if (val < highThreshold) {
-            if (prevVal < lowThreshold || prevVal > highThreshold) {
-                transitionTimestamp = timestamp;
-                mode = InputState.TRANSITIONING;
-            }
-            
-            if (mode != InputState.MED &&
-                    timestamp - transitionTimestamp > transitionDelay) {
-                mode = InputState.MED;
-            }
-        }
+//            if (prevVal < lowThreshold || prevVal > highThreshold) {
+//                transitionTimestamp = timestamp;
+//                mode = InputState.TRANSITIONING;
+//            }
+//            
+//            if (mode != InputState.MED &&
+//                    timestamp - transitionTimestamp > transitionDelay) {
+//                mode = InputState.MED;
+        
+//            }
+//        }
+        	mode=InputState.MED;
+        	}
         else {
             mode = InputState.HIGH;
         }
@@ -72,25 +108,39 @@ public class ThresholdController {
         prevVal = val;
     }
     
-    private void move(float val) {
+    private void move(float val) throws UnknownHostException, IOException {
+    	
         switch (mode) {
+        
+        
         case LOW:
-        	System.out.println("Low: " + InputState.LOW.ordinal());
+        	if(connected)
+        		{ds.write(("state " + InputState.LOW.ordinal()+"\n").getBytes());}
+        	System.out.println("Low: " + InputState.LOW.ordinal() +"Threshold " +lowThreshold +"High Threshold "+highThreshold);
             // rotate counter-clockwise
             rotate(rotationIncrement);
             break;
         case TRANSITIONING:
-        	System.out.println("Transition " + InputState.TRANSITIONING.ordinal());
+        	System.out.println("Transition " + InputState.TRANSITIONING.ordinal() +"Threshold " +lowThreshold +"High Threshold "+highThreshold);
+        	//ds.write(("state " + InputState.TRANSITIONING.ordinal()+"\n").getBytes());
             // do nothing
             break;
         case MED:
-        	System.out.println("Medium: "+InputState.MED.ordinal());
+        	if(connected)
+        	{
+        		ds.write(("state " + InputState.MED.ordinal()+"\n").getBytes());
+        	}
+        	System.out.println("Medium: "+InputState.MED.ordinal() +"Threshold " +lowThreshold +"High Threshold "+highThreshold);
+        	
             // move forward at constant speed
             forward(0);
             break;
         case HIGH:
             // go forward
-        	System.out.println("High: "+ InputState.HIGH.ordinal() );
+        	if(connected)
+        	{ds.write(("state " + InputState.HIGH.ordinal()+"\n").getBytes());
+        	}
+        	System.out.println("High: "+ InputState.HIGH.ordinal() +"Threshold " +lowThreshold +"High Threshold "+highThreshold );
             forward((val-highThreshold)/(1-highThreshold));
             break;
         }
@@ -156,6 +206,7 @@ public class ThresholdController {
     
     public void setLowThreshold(float threshold) {
         lowThreshold = threshold;
+        System.out.println(lowThreshold);
     }
     
     public float getLowThreshold() {
@@ -164,6 +215,7 @@ public class ThresholdController {
     
     public void setHighThreshold(float threshold) {
         highThreshold = threshold;
+        System.out.println(highThreshold);
     }
     
     public float getHighThreshold() {
@@ -172,6 +224,7 @@ public class ThresholdController {
     
     public void setRotationIncrement(float val) {
         rotationIncrement = val;
+        System.out.println(rotationIncrement);
     }
     
     public float getRotationIncrement() {
@@ -180,6 +233,7 @@ public class ThresholdController {
     
     public void setForwardIncrement(float val) {
         forwardIncrement = val;
+        System.out.println(forwardIncrement);
     }
     
     public float getForwardIncrement() {
@@ -188,6 +242,7 @@ public class ThresholdController {
     
     public void setForwardSlow(float val) {
         forwardSlow = val;
+        System.out.println(forwardSlow);
     }
     
     public float getForwardSlow() {

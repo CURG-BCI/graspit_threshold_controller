@@ -1,9 +1,12 @@
 package StatePublisher;
 
-import java.awt.BorderLayout;
+
 import java.awt.Color;
-import java.awt.FlowLayout;
 import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.net.UnknownHostException;
 
 import javax.sound.sampled.LineUnavailableException;
 
@@ -14,7 +17,6 @@ import rascal.libemg.proc.MovingAverageFilter;
 import rascal.libemg.proc.Util;
 
 import javax.swing.*;
-import javax.swing.GroupLayout.Alignment;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -30,6 +32,7 @@ public class RosPublisher extends JFrame implements OnReadListener{
     private static long TRANSITION_DELAY_DEFAULT = 1;
     private static long TRANSITION_DELAY_MAX = 3000;
     private static final int CURSOR_UPDATE_RATE = 16;
+    private static String title;
     
     private JSlider calibrationSlider;
     private JSlider lowThresholdSlider;
@@ -38,48 +41,80 @@ public class RosPublisher extends JFrame implements OnReadListener{
     private JSlider forwardSpeedMaxSlider;
     private JSlider forwardSpeedSlowSlider;
     static float  calibration=0.3f;
+    
+    
     JFrame ui;
     
+
+	  
+	  JLabel calibrationLabel;
+	  JLabel lowThresholdLabel;
+	  JLabel highThresholdLabel;
+	  JLabel rotationSpeedLabel;
+	  JLabel forwardSpeedMaxLabel;
+	  JLabel forwardSpeedSlowLabel;
+	  JLabel stateLabel;
+	  JButton connectButton;
 	
-    public RosPublisher() throws LineUnavailableException
+public RosPublisher() throws LineUnavailableException
 	{ 
     	System.out.println("Initializing");
     	  avgFilter = new MovingAverageFilter(8);
     	  sensor=new EMGSensor(16);
     	  sensor.addOnReadListener(this);
     	  controller=new ThresholdController(LOW_THRESHOLD,HIGH_THRESHOLD,FORWARD_INCREMENT_MAX,ROTATION_INCREMENT_MAX, FORWARD_SLOW_DEFAULT);
+
+	}
+
+public void startPublisher() throws UnknownHostException, IOException, LineUnavailableException
+{
+	  initUI();
+	  checkConnection();
+	  sensor.start();	
+}
 	
+public void initUI()
+{
+	  ui=new JFrame("Cursor Control");
 	  
-	  ui=new JFrame();
+	   calibrationLabel=new JLabel("Calibration: " +(int)(calibration*100) ,JLabel.CENTER);
+	   lowThresholdLabel=new JLabel("Low Threshold: "+(int)(LOW_THRESHOLD*100),JLabel.CENTER);
+	  highThresholdLabel=new JLabel("High Threshold: "+(int)(HIGH_THRESHOLD*100),JLabel.CENTER);
+	   rotationSpeedLabel=new JLabel("Rotation Speed: "+(int)(ROTATION_INCREMENT_MAX*100),JLabel.CENTER);
+	   forwardSpeedMaxLabel=new JLabel("Forward Speed Max: "+(int)(FORWARD_INCREMENT_MAX*100),JLabel.CENTER);
+	  forwardSpeedSlowLabel=new JLabel("Forward Speed Slow: "+(int)(FORWARD_SLOW_DEFAULT*100 ),JLabel.CENTER);
 	  
-	  JLabel calibrationLabel=new JLabel("Calibration",JLabel.CENTER);
-	  JLabel lowThresholdLabel=new JLabel("Low Threshold",JLabel.CENTER);
-	  JLabel highThresholdLabel=new JLabel("High Threshold",JLabel.CENTER);
-	  JLabel rotationSpeedLabel=new JLabel("Rotation Speed",JLabel.CENTER);
-	  JLabel forwardSpeedMaxLabel=new JLabel("Forward Speed Max",JLabel.CENTER);
-	  JLabel forwardSpeedSlowLabel=new JLabel("Forward Speed Slow",JLabel.CENTER);
+
+	  
+	  stateLabel=new JLabel("State", JLabel.CENTER);
+	  
+	  
+	  
       calibrationSlider=new JSlider(JSlider.HORIZONTAL,0,100,(int)(calibration*100));
-	  calibrationSlider.setMinorTickSpacing(10);
+	  calibrationSlider.setMinorTickSpacing(5);
 	  calibrationSlider.setMajorTickSpacing(25);
 	  calibrationSlider.setPaintTicks(true);
 	  calibrationSlider.setPaintLabels(true);
 	  calibrationSlider.addChangeListener(new ChangeListener() {
 	      public void stateChanged(ChangeEvent e) {
 	    	  calibration=calibrationSlider.getValue()/100f;
-	  
-	    	  System.out.println(calibration+" !!!!!!!!!!!!!!!!!");
+	    	  calibrationLabel.setText("Calibration: "+calibrationSlider.getValue());
+	         stateLabel.setText(""+controller.getInputState());
+	    	 // System.out.println(calibration+" !!!!!!!!!!!!!!!!!");
 	        }
 	      });
 	  
 	  lowThresholdSlider=new JSlider(JSlider.HORIZONTAL,0,100,(int)(LOW_THRESHOLD *100));
-	  lowThresholdSlider.setMinorTickSpacing(10);
+	  lowThresholdSlider.setMinorTickSpacing(5);
 	  lowThresholdSlider.setMajorTickSpacing(25);
 	  lowThresholdSlider.setPaintTicks(true);
 	  lowThresholdSlider.setPaintLabels(true);
 	  lowThresholdSlider.addChangeListener(new ChangeListener() {
 	      public void stateChanged(ChangeEvent e) {
-	    	  controller.setLowThreshold(Math.abs(lowThresholdSlider.getValue()/100));
-	    	  System.out.println(LOW_THRESHOLD+" !!!!!!!!!!!!!!!!!");
+	    	  controller.setLowThreshold(Math.abs((float)lowThresholdSlider.getValue()/100));
+	    	  lowThresholdLabel.setText("Low Threshold: "+lowThresholdSlider.getValue());
+
+	    	  //System.out.println(controller.lo+" !!!!!!!!!!!!!!!!!");
 	        }
 	      });
 	  
@@ -91,8 +126,10 @@ public class RosPublisher extends JFrame implements OnReadListener{
 	  highThresholdSlider.setPaintLabels(true);
 	  highThresholdSlider.addChangeListener(new ChangeListener() {
 	      public void stateChanged(ChangeEvent e) {
-	    	 controller.setHighThreshold(Math.abs(highThresholdSlider.getValue()/100));
-	    	  System.out.println(HIGH_THRESHOLD+" !!!!!!!!!!!!!!!!!");
+	    	 controller.setHighThreshold(Math.abs((float)highThresholdSlider.getValue()/100));
+	    	 highThresholdLabel.setText("High Threshold: "+highThresholdSlider.getValue());
+
+	    	  //System.out.println(HIGH_THRESHOLD+" !!!!!!!!!!!!!!!!!");
 	        }
 	      });
 	  
@@ -104,41 +141,51 @@ public class RosPublisher extends JFrame implements OnReadListener{
 	  rotationSpeedSlider.addChangeListener(new ChangeListener() {
 	      public void stateChanged(ChangeEvent e) {
 	    	  controller.setRotationIncrement(mapRotationSpeed(Math.abs((float)rotationSpeedSlider.getValue()/100)));
-	    	  System.out.println(ROTATION_INCREMENT_MAX+" !!!!!!!!!!!!!!!!!");
+	    	  rotationSpeedLabel.setText("Rotation Speed: "+rotationSpeedSlider.getValue());
+
+	    	  //System.out.println(ROTATION_INCREMENT_MAX+" !!!!!!!!!!!!!!!!!");
 	        }
 	      });
 	  
 	  
 	  forwardSpeedMaxSlider=new JSlider(JSlider.HORIZONTAL,0,100,(int)(FORWARD_INCREMENT_MAX*100));
-	  forwardSpeedMaxSlider.setMinorTickSpacing(10);
+	  forwardSpeedMaxSlider.setMinorTickSpacing(5);
 	  forwardSpeedMaxSlider.setMajorTickSpacing(25);
 	  forwardSpeedMaxSlider.setPaintTicks(true);
 	  forwardSpeedMaxSlider.setPaintLabels(true);
 	  forwardSpeedMaxSlider.addChangeListener(new ChangeListener() {
 	      public void stateChanged(ChangeEvent e) {
-	    	  controller.setForwardIncrement(mapForwardSpeed(Math.abs(forwardSpeedMaxSlider.getValue()/100)));
-	    	  System.out.println(FORWARD_INCREMENT_MAX+" !!!!!!!!!!!!!!!!!");
+	    	  controller.setForwardIncrement(mapForwardSpeed(Math.abs((float)forwardSpeedMaxSlider.getValue()/100)));
+	    	  forwardSpeedMaxLabel.setText("Forward Speed Max: "+forwardSpeedMaxSlider.getValue());
+
+	    	 // System.out.println(FORWARD_INCREMENT_MAX+" !!!!!!!!!!!!!!!!!");
 	        }
 	      });
 	  
 	  forwardSpeedSlowSlider=new JSlider(JSlider.HORIZONTAL,0,100,(int)(FORWARD_SLOW_DEFAULT*100));
-	  forwardSpeedSlowSlider.setMinorTickSpacing(10);
+	  forwardSpeedSlowSlider.setMinorTickSpacing(5);
 	  forwardSpeedSlowSlider.setMajorTickSpacing(25);
 	  forwardSpeedSlowSlider.setPaintTicks(true);
 	  forwardSpeedSlowSlider.setPaintLabels(true);
 	  forwardSpeedSlowSlider.addChangeListener(new ChangeListener() {
 	      public void stateChanged(ChangeEvent e) {
-	    	  controller.setForwardSlow(mapForwardSpeed(Math.abs(forwardSpeedSlowSlider.getValue()/100)));
-	    	  
-	    	  System.out.println(FORWARD_SLOW_DEFAULT+" !!!!!!!!!!!!!!!!!");
+	    	  controller.setForwardSlow(mapForwardSpeed(Math.abs((float)forwardSpeedSlowSlider.getValue()/100)));
+	    	  forwardSpeedSlowLabel.setText("Forward Speed Slow: "+forwardSpeedSlowSlider.getValue());
+
+	    	 // System.out.println(FORWARD_SLOW_DEFAULT+" !!!!!!!!!!!!!!!!!");
 	        }
 	      });
 	  
-	  JSlider TransitionDelaySlider=new JSlider(0,100,(int)calibration*100);
-	  calibrationSlider.setMinorTickSpacing(10);
-	  calibrationSlider.setMajorTickSpacing(25);
-	  calibrationSlider.setPaintTicks(true);
-	  calibrationSlider.setPaintLabels(true);
+	  //JSlider TransitionDelaySlider=new JSlider(0,100,(int)(calibration*100));
+	  connectButton=new JButton("Connect");
+	  
+	  connectButton.addActionListener(new ActionListener() {
+	         public void actionPerformed(ActionEvent e) {
+	        	controller.initSocketConnections();
+	             
+	          }          
+	       });
+
 	  JPanel calibrationPanel=new JPanel();
 	  calibrationPanel.setLayout(new GridLayout(2,1,0,0));
 	  JPanel lowThresholdPanel=new JPanel();
@@ -151,6 +198,8 @@ public class RosPublisher extends JFrame implements OnReadListener{
 	  forwardSpeedMaxPanel.setLayout(new GridLayout(2,1,0,0));
 	  JPanel forwardSpeedSlowPanel=new JPanel();
 	  forwardSpeedSlowPanel.setLayout(new GridLayout(2,1,0,0));
+	  JPanel statePanel=new JPanel();
+	  statePanel.setLayout(new GridLayout(1,2,0,0));
 	  
 	  
 	  JPanel uiPanel=new JPanel();
@@ -184,20 +233,21 @@ public class RosPublisher extends JFrame implements OnReadListener{
 	  forwardSpeedSlowPanel.add(forwardSpeedSlowSlider);
 	  forwardSpeedSlowPanel.setBackground(Color.orange);
 	  
-	  uiPanel.setLayout(new GridLayout(6,1));
+	  statePanel.add(stateLabel);
+	  statePanel.add(connectButton);
+	  
+	  uiPanel.setLayout(new GridLayout(7,1));
 	  uiPanel.add(calibrationPanel);
 	  uiPanel.add(lowThresholdPanel);
 	  uiPanel.add(highThresholdPanel);
 	  uiPanel.add(rotationPanel);
 	  uiPanel.add(forwardSpeedMaxPanel);
 	  uiPanel.add(forwardSpeedSlowPanel);
-	  //uiPanel.add(TransitionDelaySlider);
+	  uiPanel.add(statePanel);
 	  System.out.println("Adding Panel");
 	  ui.add(uiPanel);
-	  //pack();
-	 //ui.setLayout(null);
 	  ui.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	  ui.setSize(320,480);
+	  ui.setSize(400,600);
 	  //ui.pack();
 	  ui.setVisible(true);
 	  
@@ -218,11 +268,19 @@ public class RosPublisher extends JFrame implements OnReadListener{
     @Override
     public void onRead(float[] sensorData) {
         // process raw input on the recording thread
-    	
+    	stateLabel.setText(""+controller.getInputState());
         final float val = Util.rms(sensorData);
         System.out.println("In onRead : " + val);
         onUpdate(val);
-        controller.update(val);
+        try {
+			controller.update(val);
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
         
     }
     
@@ -233,15 +291,23 @@ public class RosPublisher extends JFrame implements OnReadListener{
     	
     	
     }
-	public static void main(String args[]) throws LineUnavailableException
+    
+    public void checkConnection() throws UnknownHostException, IOException, LineUnavailableException
+    {
+	  if(controller.initSocketConnections())
+	  {
+		  ui.setTitle("Cursor Control [Real Time]");
+	  }
+	  else
+	  {
+		  ui.setTitle("Cursor Control [Debug]");
+	  }
+	  
+    	
+    }
+	public static void main(String args[]) throws LineUnavailableException, UnknownHostException, IOException
 	{ RosPublisher rospub=new RosPublisher();
-	  System.out.println("Starting Sensor");
-	  rospub.sensor.start();
-	  //rospub.ui.setVisible(true);
-	  
-	 
-	  
-	  
+	rospub.startPublisher();
 	}
 	
 
