@@ -69,7 +69,7 @@ public RosPublisher() throws LineUnavailableException
 public void startPublisher() throws UnknownHostException, IOException, LineUnavailableException
 {
 	  initUI();
-	  checkConnection();
+	  //checkConnection();
 	  sensor.start();	
 }
 	
@@ -100,7 +100,8 @@ public void initUI()
 	    	  calibration=calibrationSlider.getValue()/100f;
 	    	  calibrationLabel.setText("Calibration: "+calibrationSlider.getValue());
 	         stateLabel.setText(""+controller.getInputState());
-	    	 // System.out.println(calibration+" !!!!!!!!!!!!!!!!!");
+	       
+	    	  System.out.println(calibration);
 	        }
 	      });
 	  
@@ -181,7 +182,14 @@ public void initUI()
 	  
 	  connectButton.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent e) {
-	        	controller.initSocketConnections();
+	        	  if(controller.initSocketConnections())
+	        	  {
+	        		  ui.setTitle("Cursor Control [Real Time]");
+	        	  }
+	        	  else
+	        	  {
+	        		  ui.setTitle("Cursor Control [Debug]");
+	        	  }
 	             
 	          }          
 	       });
@@ -281,7 +289,10 @@ public void initUI()
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-        
+        if(!controller.connected)
+        {
+       	 ui.setTitle("Cursor Control [Debug]");
+        }
     }
     
     public void onUpdate(float val)

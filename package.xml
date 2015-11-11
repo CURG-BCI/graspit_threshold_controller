@@ -1,1 +1,15 @@
 
+<package>
+ <name>bci_controller</name>
+  <version>1.0.0</version>
+  <description>bci_controller</description>
+  <maintainer email="jvarley@cs.columbia.edu">Jake Varley</maintainer>
+  <author>Jake</author>
+  <license>BSD</license>
+  <url>http://ros.org/wiki/calibration</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+
+
+</package>

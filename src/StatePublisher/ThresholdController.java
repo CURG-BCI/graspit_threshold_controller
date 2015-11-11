@@ -25,7 +25,7 @@ public class ThresholdController {
     public static final float FORWARD_INCREMENT_SLOW_DEFAULT = 0.05f;
     public static final float ROTATION_INCREMENT_DEFAULT = (float)Math.PI/16;
     public static final float ATANH07 = 0.867300577f;
-    private boolean connected=false;
+    public boolean connected=false;
     
     private float x;
     private float y;
@@ -108,17 +108,23 @@ public class ThresholdController {
         prevVal = val;
     }
     
-    private void move(float val) throws UnknownHostException, IOException {
+    private void move(float val)  {
     	
         switch (mode) {
         
         
         case LOW:
-        	if(connected)
-        		{ds.write(("state " + InputState.LOW.ordinal()+"\n").getBytes());}
         	System.out.println("Low: " + InputState.LOW.ordinal() +"Threshold " +lowThreshold +"High Threshold "+highThreshold);
-            // rotate counter-clockwise
-            rotate(rotationIncrement);
+        	rotate(rotationIncrement);
+        	if(connected)
+        		{try {
+					ds.write(("state " + InputState.LOW.ordinal()+"\n").getBytes());
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					connected=false;
+				}}
+        	
             break;
         case TRANSITIONING:
         	System.out.println("Transition " + InputState.TRANSITIONING.ordinal() +"Threshold " +lowThreshold +"High Threshold "+highThreshold);
@@ -126,23 +132,36 @@ public class ThresholdController {
             // do nothing
             break;
         case MED:
-        	if(connected)
-        	{
-        		ds.write(("state " + InputState.MED.ordinal()+"\n").getBytes());
-        	}
         	System.out.println("Medium: "+InputState.MED.ordinal() +"Threshold " +lowThreshold +"High Threshold "+highThreshold);
         	
             // move forward at constant speed
             forward(0);
+        	if(connected)
+        	{
+        		try {
+					ds.write(("state " + InputState.MED.ordinal()+"\n").getBytes());
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					connected=false;
+				}
+        	}
             break;
         case HIGH:
             // go forward
-        	if(connected)
-        	{ds.write(("state " + InputState.HIGH.ordinal()+"\n").getBytes());
-        	}
         	System.out.println("High: "+ InputState.HIGH.ordinal() +"Threshold " +lowThreshold +"High Threshold "+highThreshold );
             forward((val-highThreshold)/(1-highThreshold));
-            break;
+            
+        	if(connected)
+        	{try {
+				ds.write(("state " + InputState.HIGH.ordinal()+"\n").getBytes());
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				connected=false;
+			}
+        	}
+        	break;
         }
     }
     

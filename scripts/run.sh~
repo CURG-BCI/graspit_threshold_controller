@@ -1,0 +1,4 @@
+#!/bin/bash
+roscd bci_controller/scripts
+#cd ~/ros/bci_project_ws/src/bci_controller/scripts
+java -jar statePublisher.jar
