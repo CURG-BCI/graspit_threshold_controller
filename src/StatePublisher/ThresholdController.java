@@ -18,7 +18,7 @@ public class ThresholdController {
         HIGH
     }
     
-    public static final long TRANSITION_DELAY_DEFAULT = 750 * 1000000;
+    public static final long TRANSITION_DELAY_DEFAULT = 150 * 1000000;
     public static final float LOW_THRESHOLD_DEFAULT = 0.15f;
     public static final float HIGH_THRESHOLD_DEFAULT = 0.42f;
     public static final float FORWARD_INCREMENT_MAX_DEFAULT = 0.1f;
@@ -58,7 +58,7 @@ public class ThresholdController {
     }
     public boolean initSocketConnections() //throws UnknownHostException, IOException
     {try {
-		socket=new Socket("localhost",4765);
+		socket=new Socket("127.0.0.1",4775);
 	} catch (UnknownHostException e) {
 		// TODO Auto-generated catch block
 		e.printStackTrace();
@@ -81,30 +81,33 @@ public class ThresholdController {
 	return true;
 	}
     public void update(float val) throws UnknownHostException, IOException {
+    	
         timestamp = System.nanoTime();
-        
+        InputState prev_mode=mode;
         if (val < lowThreshold) {
             mode = InputState.LOW;
         }
         else if (val < highThreshold) {
-//            if (prevVal < lowThreshold || prevVal > highThreshold) {
-//                transitionTimestamp = timestamp;
-//                mode = InputState.TRANSITIONING;
-//            }
-//            
-//            if (mode != InputState.MED &&
-//                    timestamp - transitionTimestamp > transitionDelay) {
-//                mode = InputState.MED;
+           if (prevVal < lowThreshold || prevVal > highThreshold) {
+               transitionTimestamp = timestamp;
+               mode = InputState.TRANSITIONING;
+            }
+           
+          if (mode != InputState.MED &&
+                    timestamp - transitionTimestamp > transitionDelay) {
+               mode = InputState.MED;
+       
+           }
         
-//            }
-//        }
-        	mode=InputState.MED;
+       //	mode=InputState.MED;
         	}
         else {
             mode = InputState.HIGH;
         }
-        
-        move(val);
+        if(mode!= prev_mode)
+        {
+        	move(val);
+        }
         prevVal = val;
     }
     
@@ -118,7 +121,7 @@ public class ThresholdController {
         	rotate(rotationIncrement);
         	if(connected)
         		{try {
-					ds.write(("state " + InputState.LOW.ordinal()+"\n").getBytes());
+					ds.write((InputState.LOW.ordinal()+"\n").getBytes());
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -139,7 +142,7 @@ public class ThresholdController {
         	if(connected)
         	{
         		try {
-					ds.write(("state " + InputState.MED.ordinal()+"\n").getBytes());
+					ds.write((InputState.MED.ordinal()+"\n").getBytes());
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -154,7 +157,7 @@ public class ThresholdController {
             
         	if(connected)
         	{try {
-				ds.write(("state " + InputState.HIGH.ordinal()+"\n").getBytes());
+				ds.write((InputState.HIGH.ordinal()+"\n").getBytes());
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
