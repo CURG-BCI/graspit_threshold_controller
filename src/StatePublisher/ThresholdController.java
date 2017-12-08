@@ -4,13 +4,12 @@ import java.applet.Applet;
 import java.applet.AudioClip;
 import java.io.*;
 import java.net.Socket;
+import javax.sound.sampled.*;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Random;
 
 import rascal.libemg.proc.Util;
-
-import javax.sound.sampled.*;
 
 public class ThresholdController {
 
@@ -40,7 +39,7 @@ public class ThresholdController {
     private OutputStream os;
     private DataOutputStream ds;
 
-    private final AudioClip beep_sound, select_sound;
+    private boolean isPlaying;
 
     public ThresholdController(float lowThreshold, float highThreshold,
                                float forwardIncrement, float rotationIncrement, float forwardSlow) {
@@ -49,8 +48,7 @@ public class ThresholdController {
         this.forwardIncrement = forwardIncrement;
         this.rotationIncrement = rotationIncrement;
 
-        this.beep_sound = Applet.newAudioClip(this.getClass().getResource("/" + BEEP_NAME));
-        this.select_sound = Applet.newAudioClip(this.getClass().getResource("/" + SELECT_NAME));
+        isPlaying = false;
 
         reset();
     }
@@ -66,16 +64,32 @@ public class ThresholdController {
         return coord;
     }
 
-    public synchronized void playSound(final AudioClip sound) {
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    sound.play();
-                } catch (Exception e) {
-                    System.err.println(e.getMessage());
+    public synchronized void playSound(String resourceName) {
+        if(!isPlaying) {
+            try (InputStream is = new BufferedInputStream(getClass().getResourceAsStream("/" + resourceName))) {
+                try (AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(is)) {
+                    DataLine.Info info = new DataLine.Info(Clip.class, audioInputStream.getFormat());
+                    Clip clip = (Clip) AudioSystem.getLine(info);
+                    clip.addLineListener(new LineListener() {
+                        @Override
+                        public void update(LineEvent event) {
+                            System.out.println(event.getFramePosition());
+                            if (event.getType().equals(LineEvent.Type.STOP)) {
+                                isPlaying = false;
+                            }
+                        }
+                    });
+                    clip.open(audioInputStream);
+                    clip.start();
+                    isPlaying = true;
+                } catch (UnsupportedAudioFileException | LineUnavailableException ex) {
+                    ex.printStackTrace();
                 }
+            } catch (IOException exp) {
+                exp.printStackTrace();
             }
-        }).start();
+        }
+
     }
 
     public boolean initSocketConnections() //throws UnknownHostException, IOException
@@ -121,14 +135,14 @@ public class ThresholdController {
             }
 
             if(prevVal < lowThreshold) {
-                playSound(this.beep_sound);
+                playSound(BEEP_NAME);
             }
 
             //	mode=InputState.MED;
         }
         else {
             if(prevVal < highThreshold) {
-                playSound(this.select_sound);
+                playSound(SELECT_NAME);
             }
             mode = InputState.HIGH;
         }
