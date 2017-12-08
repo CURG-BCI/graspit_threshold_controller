@@ -39,12 +39,18 @@ public class ThresholdController {
     private Socket socket;
     private OutputStream os;
     private DataOutputStream ds;
+
+    private final AudioClip beep_sound, select_sound;
+
     public ThresholdController(float lowThreshold, float highThreshold,
                                float forwardIncrement, float rotationIncrement, float forwardSlow) {
         this.lowThreshold = lowThreshold;
         this.highThreshold = highThreshold;
         this.forwardIncrement = forwardIncrement;
         this.rotationIncrement = rotationIncrement;
+
+        this.beep_sound = Applet.newAudioClip(this.getClass().getResource("/" + BEEP_NAME));
+        this.select_sound = Applet.newAudioClip(this.getClass().getResource("/" + SELECT_NAME));
 
         reset();
     }
@@ -60,12 +66,10 @@ public class ThresholdController {
         return coord;
     }
 
-    public synchronized void playSound(final String url) {
-        final URL resourceURL = this.getClass().getResource("/" + url);
+    public synchronized void playSound(final AudioClip sound) {
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    AudioClip sound = Applet.newAudioClip(resourceURL);
                     sound.play();
                 } catch (Exception e) {
                     System.err.println(e.getMessage());
@@ -117,14 +121,14 @@ public class ThresholdController {
             }
 
             if(prevVal < lowThreshold) {
-                playSound(BEEP_NAME);
+                playSound(this.beep_sound);
             }
 
             //	mode=InputState.MED;
         }
         else {
             if(prevVal < highThreshold) {
-                playSound(SELECT_NAME);
+                playSound(this.select_sound);
             }
             mode = InputState.HIGH;
         }
